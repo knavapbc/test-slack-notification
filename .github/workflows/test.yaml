@@ -1,0 +1,36 @@
+name: test
+on:
+  pull_request:
+
+#  Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test scream
+        run: ls
+      - uses: actions/checkout@v4
+      - name: test scream 2
+        run: ls
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: notify slack # notify any terraform failiure via slack message in channel #ab2d-bcda-dpc-platform
+        id: slack
+        uses: slackapi/slack-github-action@v1.26.0
+        if: ${{ failure() }}
+        with:
+          channel-id: 'C07B1CA23DJ' # slack channel to report terraform apply fail
+          slack-message: "Terraform apply failure\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}" # message that will be sent to the slack channel with the url
+        env:
+           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
